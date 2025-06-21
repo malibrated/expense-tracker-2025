@@ -510,22 +510,37 @@
             localStorage.setItem('googleClientId', clientId);
             localStorage.setItem('googleSpreadsheetId', spreadsheetId);
             
-            // Debug logging
+            // Debug logging with correct references
             console.log('Checking API availability...');
-            console.log('gapi available:', typeof gapi !== 'undefined');
-            console.log('gapi.load available:', typeof gapi !== 'undefined' && typeof gapi.load === 'function');
+            console.log('window.gapi exists:', !!window.gapi);
+            console.log('window.gapi.load exists:', !!(window.gapi && window.gapi.load));
             
-            // Check if gapi is loaded
-            if (typeof gapi === 'undefined') {
-                alert('Google API is still loading. Please wait a moment and try again.');
+            // Try to force reload the API if it's not available
+            if (!window.gapi) {
+                console.log('Google API not found, attempting to reload...');
+                alert('Google API failed to load. Please refresh the page and try again.');
                 return;
             }
             
-            if (typeof gapi.load !== 'function') {
-                alert('Google API not fully loaded. Please refresh the page and try again.');
-                return;
+            // Wait for API to be truly ready
+            function waitForGapiReady(attempts = 0) {
+                if (window.gapi && window.gapi.load && typeof window.gapi.load === 'function') {
+                    console.log('API is ready, proceeding...');
+                    proceedWithAuth();
+                } else if (attempts < 50) { // Try for 10 seconds
+                    console.log(`API not ready yet, waiting... (attempt ${attempts + 1})`);
+                    setTimeout(() => waitForGapiReady(attempts + 1), 200);
+                } else {
+                    console.error('API failed to become ready after 10 seconds');
+                    alert('Google API failed to initialize. Please refresh the page and try again.');
+                    resetConnectButton();
+                }
             }
             
+            waitForGapiReady();
+        }
+        
+        function proceedWithAuth() {
             // Update button to show loading
             const connectBtn = document.getElementById('connectBtn');
             const connectText = document.getElementById('connectText');
@@ -914,12 +929,12 @@
         
         // Wait for GAPI to load, then initialize
         function waitForGapi() {
-            if (window.gapi) {
+            if (window.gapi && window.gapi.load) {
                 console.log('Google API loaded successfully');
                 gapiLoaded = true;
                 init();
             } else {
-                console.log('Waiting for Google API to load...');
+                console.log('Waiting for Google API to load... gapi exists:', !!window.gapi);
                 setTimeout(waitForGapi, 500);
             }
         }
@@ -934,21 +949,46 @@
                 connectText.textContent = 'Loading Google API...';
             }
             
-            const script = document.createElement('script');
-            script.src = 'https://apis.google.com/js/api.js';
-            script.onload = function() {
-                console.log('Google API script loaded');
-                waitForGapi();
-            };
-            script.onerror = function() {
-                console.error('Failed to load Google API script');
-                if (connectBtn && connectText) {
-                    connectText.textContent = 'Failed to load Google API';
-                    connectBtn.disabled = true;
+            // Try multiple CDN sources for better reliability
+            const apiSources = [
+                'https://apis.google.com/js/api.js',
+                'https://apis.google.com/js/api.js?onload=gapiLoaded'
+            ];
+            
+            function tryLoadAPI(sourceIndex = 0) {
+                if (sourceIndex >= apiSources.length) {
+                    console.error('All API sources failed');
+                    if (connectBtn && connectText) {
+                        connectText.textContent = 'Failed to load Google API';
+                        connectBtn.disabled = true;
+                    }
+                    alert('Failed to load Google API from all sources. Please check your internet connection and try again later.');
+                    return;
                 }
-                alert('Failed to load Google API. Please check your internet connection and reload the page.');
-            };
-            document.head.appendChild(script);
+                
+                const script = document.createElement('script');
+                script.src = apiSources[sourceIndex];
+                script.onload = function() {
+                    console.log(`Google API script loaded from source ${sourceIndex + 1}`);
+                    // Give it more time to initialize
+                    setTimeout(() => {
+                        if (window.gapi) {
+                            console.log('Google API initialized successfully');
+                            waitForGapi();
+                        } else {
+                            console.log('API script loaded but gapi not available, trying next source...');
+                            tryLoadAPI(sourceIndex + 1);
+                        }
+                    }, 1000);
+                };
+                script.onerror = function() {
+                    console.error(`Failed to load Google API from source ${sourceIndex + 1}`);
+                    tryLoadAPI(sourceIndex + 1);
+                };
+                document.head.appendChild(script);
+            }
+            
+            tryLoadAPI();
         }
         
         // Start loading when page loads
