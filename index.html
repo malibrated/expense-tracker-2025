@@ -46,21 +46,66 @@
             font-size: 14px;
         }
         
-        .auth-section {
+        .setup-section {
             padding: 25px;
-            text-align: center;
             background: #f8f9fa;
+            border-bottom: 1px solid #e1e8ed;
         }
         
-        .auth-section h2 {
-            margin-bottom: 15px;
-            color: #2c3e50;
-        }
-        
-        .auth-section p {
+        .setup-instructions {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 20px;
             margin-bottom: 20px;
-            color: #666;
+        }
+        
+        .setup-instructions h3 {
+            color: #1976d2;
+            margin-bottom: 15px;
+        }
+        
+        .setup-instructions p {
+            margin-bottom: 10px;
             line-height: 1.6;
+        }
+        
+        .method-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .method-card {
+            background: white;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .method-card:hover {
+            border-color: #3498db;
+            transform: translateY(-2px);
+        }
+        
+        .method-card.selected {
+            border-color: #3498db;
+            background: #e3f2fd;
+        }
+        
+        .method-card h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .method-card p {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.4;
         }
         
         .content {
@@ -74,7 +119,7 @@
             padding: 12px;
             border-radius: 8px;
             margin-bottom: 20px;
-            display: flex;
+            display: none;
             align-items: center;
             gap: 10px;
         }
@@ -85,10 +130,10 @@
             color: #c62828;
         }
         
-        .sync-status.pending {
-            background: #fff3e0;
-            border-color: #ff9800;
-            color: #ef6c00;
+        .sync-status.info {
+            background: #e3f2fd;
+            border-color: #2196f3;
+            color: #1976d2;
         }
         
         .input-section {
@@ -159,17 +204,8 @@
             transform: none;
         }
         
-        .btn.google {
-            background: linear-gradient(135deg, #4285f4 0%, #3367d6 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        
-        .btn.disconnect {
-            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-            margin-top: 10px;
+        .btn.secondary {
+            background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
         }
         
         .summary {
@@ -226,13 +262,8 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         
-        .expense-item.syncing {
-            opacity: 0.7;
-            border-color: #ff9800;
-        }
-        
-        .expense-item.synced {
-            border-color: #4caf50;
+        .expense-item.pending-sync {
+            border-left: 4px solid #ff9800;
         }
         
         .expense-details {
@@ -277,11 +308,13 @@
             margin-top: 25px;
             padding-top: 20px;
             border-top: 1px solid #e1e8ed;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
         }
         
         .export-btn {
             background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
-            margin-bottom: 10px;
         }
         
         .clear-btn {
@@ -301,33 +334,27 @@
             opacity: 0.3;
         }
         
-        .setup-instructions {
-            background: #e3f2fd;
-            border: 1px solid #2196f3;
+        .google-sheets-instructions {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
             border-radius: 8px;
             padding: 20px;
             margin-bottom: 20px;
+            display: none;
         }
         
-        .setup-instructions h3 {
-            color: #1976d2;
+        .google-sheets-instructions h4 {
+            color: #2c3e50;
             margin-bottom: 15px;
         }
         
-        .setup-instructions ol {
+        .google-sheets-instructions ol {
             margin-left: 20px;
         }
         
-        .setup-instructions li {
+        .google-sheets-instructions li {
             margin-bottom: 8px;
             line-height: 1.5;
-        }
-        
-        .setup-instructions code {
-            background: #f5f5f5;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: monospace;
         }
         
         @media (max-width: 480px) {
@@ -341,8 +368,12 @@
                 padding: 20px;
             }
             
-            .content {
+            .content, .setup-section {
                 padding: 20px;
+            }
+            
+            .method-options {
+                grid-template-columns: 1fr;
             }
             
             .summary {
@@ -358,6 +389,10 @@
             .expense-amount {
                 align-self: flex-end;
             }
+            
+            .export-section {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -365,49 +400,66 @@
     <div class="container">
         <div class="header">
             <h1>💼 Business Expense Tracker</h1>
-            <p>Track your non-reimbursed business expenses with Google Sheets sync</p>
+            <p>Track your non-reimbursed business expenses</p>
         </div>
         
-        <div id="authSection" class="auth-section">
+        <div class="setup-section">
             <div class="setup-instructions">
-                <h3>🔧 Setup Required</h3>
-                <p>To sync with Google Sheets, you'll need to create a Google Cloud Project and get API credentials:</p>
+                <h3>📊 Choose Your Sync Method</h3>
+                <p>Select how you want to backup and sync your expense data:</p>
+            </div>
+            
+            <div class="method-options">
+                <div class="method-card" onclick="selectMethod('local')" id="localMethod">
+                    <h4>🏠 Local Only</h4>
+                    <p>Store data locally with CSV export for manual Google Sheets import</p>
+                </div>
+                <div class="method-card" onclick="selectMethod('sheets')" id="sheetsMethod">
+                    <h4>☁️ Auto-Sync</h4>
+                    <p>Automatically sync to Google Sheets (requires setup)</p>
+                </div>
+            </div>
+            
+            <div class="google-sheets-instructions" id="sheetsInstructions">
+                <h4>🔧 Google Sheets Auto-Sync Setup</h4>
                 <ol>
-                    <li>Go to <a href="https://console.cloud.google.com" target="_blank">Google Cloud Console</a></li>
-                    <li>Create a new project or select an existing one</li>
-                    <li>Enable the <strong>Google Sheets API</strong></li>
-                    <li>Go to "Credentials" → "Create Credentials" → "OAuth 2.0 Client ID"</li>
-                    <li>Set application type to "Web application"</li>
-                    <li>Add your domain to "Authorized JavaScript origins"</li>
-                    <li>Copy your Client ID and paste it below</li>
+                    <li>Create a <a href="https://sheets.google.com" target="_blank">new Google Sheet</a></li>
+                    <li>Add these headers in row 1: Date | Description | Amount | Payment Method | Category | Notes</li>
+                    <li>Go to <strong>Extensions → Apps Script</strong></li>
+                    <li>Replace the default code with the script below</li>
+                    <li>Click <strong>Deploy → New Deployment → Web App</strong></li>
+                    <li>Set "Execute as: Me" and "Who has access: Anyone"</li>
+                    <li>Copy the web app URL and paste it below</li>
                 </ol>
+                <textarea readonly id="appsScript" style="width: 100%; height: 150px; margin: 10px 0; font-family: monospace; font-size: 12px;">function doPost(e) {
+  const sheet = SpreadsheetApp.getActiveSheet();
+  const data = JSON.parse(e.postData.contents);
+  
+  sheet.appendRow([
+    data.date,
+    data.description,
+    data.amount,
+    data.paymentMethod,
+    data.category || '',
+    data.notes || ''
+  ]);
+  
+  return ContentService.createTextOutput('Success');
+}</textarea>
+                
+                <div class="input-group">
+                    <label for="webhookUrl">Google Apps Script Web App URL</label>
+                    <input type="url" id="webhookUrl" placeholder="https://script.google.com/macros/s/...../exec">
+                </div>
             </div>
             
-            <div class="input-group">
-                <label for="clientId">Google OAuth Client ID</label>
-                <input type="text" id="clientId" placeholder="your-client-id.googleusercontent.com">
-            </div>
-            
-            <div class="input-group">
-                <label for="spreadsheetId">Google Sheets ID (from URL)</label>
-                <input type="text" id="spreadsheetId" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms">
-            </div>
-            
-            <button class="btn google" onclick="initializeGoogleAuth()" id="connectBtn">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                </svg>
-                <span id="connectText">Connect to Google Sheets</span>
-            </button>
+            <button class="btn" onclick="startTracking()" id="startBtn">Start Tracking Expenses</button>
         </div>
         
-        <div id="mainContent" class="content" style="display: none;">
-            <div id="syncStatus" class="sync-status" style="display: none;">
-                <span id="syncIcon">✓</span>
-                <span id="syncMessage">Connected to Google Sheets</span>
+        <div class="content" id="mainContent" style="display: none;">
+            <div class="sync-status" id="syncStatus">
+                <span id="syncIcon">ℹ</span>
+                <span id="syncMessage">Local storage mode - use Export to backup your data</span>
             </div>
             
             <div class="input-section">
@@ -459,7 +511,7 @@
                     <textarea id="notes" placeholder="Additional details about this expense"></textarea>
                 </div>
                 
-                <button class="btn" id="addExpenseBtn" onclick="addExpense()">Add Expense</button>
+                <button class="btn" onclick="addExpense()">Add Expense</button>
             </div>
             
             <div class="summary">
@@ -485,155 +537,73 @@
             <div class="export-section">
                 <button class="btn export-btn" onclick="exportToCSV()">📊 Export to CSV</button>
                 <button class="btn clear-btn" onclick="clearAllExpenses()">🗑️ Clear All Data</button>
-                <button class="btn disconnect" onclick="disconnectGoogle()">🔌 Disconnect Google</button>
             </div>
         </div>
     </div>
 
     <script>
         let expenses = JSON.parse(localStorage.getItem('businessExpenses')) || [];
-        let gapi;
-        let isSignedIn = false;
-        let spreadsheetId = '';
-        let gapiLoaded = false;
+        let syncMethod = localStorage.getItem('syncMethod') || 'local';
+        let webhookUrl = localStorage.getItem('webhookUrl') || '';
         
-        function initializeGoogleAuth() {
-            const clientId = document.getElementById('clientId').value.trim();
-            spreadsheetId = document.getElementById('spreadsheetId').value.trim();
+        function selectMethod(method) {
+            // Remove selection from all cards
+            document.getElementById('localMethod').classList.remove('selected');
+            document.getElementById('sheetsMethod').classList.remove('selected');
             
-            if (!clientId || !spreadsheetId) {
-                alert('Please enter both Client ID and Spreadsheet ID');
-                return;
+            // Add selection to clicked card
+            document.getElementById(method + 'Method').classList.add('selected');
+            
+            // Show/hide instructions
+            const instructions = document.getElementById('sheetsInstructions');
+            if (method === 'sheets') {
+                instructions.style.display = 'block';
+            } else {
+                instructions.style.display = 'none';
             }
             
-            // Save credentials
-            localStorage.setItem('googleClientId', clientId);
-            localStorage.setItem('googleSpreadsheetId', spreadsheetId);
-            
-            // Check if APIs are pre-loaded
-            if (!window.gapi || !window.gapi.client || !window.gapi.auth2) {
-                alert('Google APIs not fully loaded. Please refresh the page and try again.');
-                return;
-            }
-            
-            console.log('APIs are ready, initializing...');
-            
-            // Update button to show loading
-            const connectBtn = document.getElementById('connectBtn');
-            const connectText = document.getElementById('connectText');
-            connectBtn.disabled = true;
-            connectText.textContent = 'Connecting...';
-            
-            // Initialize directly since APIs are pre-loaded
-            initGoogleAPI();
+            syncMethod = method;
         }
         
-        function initGoogleAPI() {
-            const clientId = localStorage.getItem('googleClientId');
-            
-            console.log('Initializing Google API with client ID:', clientId);
-            
-            window.gapi.client.init({
-                'clientId': clientId,
-                'discoveryDocs': ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
-                'scope': 'https://www.googleapis.com/auth/spreadsheets'
-            }).then(() => {
-                console.log('Google API initialized successfully');
-                const authInstance = window.gapi.auth2.getAuthInstance();
-                isSignedIn = authInstance.isSignedIn.get();
-                
-                console.log('Current sign-in status:', isSignedIn);
-                
-                if (isSignedIn) {
-                    console.log('User already signed in');
-                    showMainContent();
-                    initializeSheet();
-                } else {
-                    console.log('Starting sign-in process...');
-                    authInstance.signIn().then(() => {
-                        console.log('Sign-in successful');
-                        isSignedIn = true;
-                        showMainContent();
-                        initializeSheet();
-                    }).catch(error => {
-                        console.error('Sign-in failed:', error);
-                        showSyncStatus('Sign-in failed. Please try again.', 'error');
-                        resetConnectButton();
-                    });
+        function startTracking() {
+            if (syncMethod === 'sheets') {
+                const url = document.getElementById('webhookUrl').value.trim();
+                if (!url) {
+                    alert('Please enter the Google Apps Script Web App URL for auto-sync');
+                    return;
                 }
-            }).catch(error => {
-                console.error('Failed to initialize Google API:', error);
-                alert('Failed to initialize Google API. Please check your Client ID and try again.');
-                resetConnectButton();
-            });
-        }
-        
-        function resetConnectButton() {
-            const connectBtn = document.getElementById('connectBtn');
-            const connectText = document.getElementById('connectText');
-            connectBtn.disabled = false;
-            connectText.textContent = 'Connect to Google Sheets';
-        }
-        
-        function showMainContent() {
-            document.getElementById('authSection').style.display = 'none';
+                webhookUrl = url;
+                localStorage.setItem('webhookUrl', webhookUrl);
+            }
+            
+            localStorage.setItem('syncMethod', syncMethod);
+            
+            // Hide setup and show main content
+            document.querySelector('.setup-section').style.display = 'none';
             document.getElementById('mainContent').style.display = 'block';
-            showSyncStatus('Connected to Google Sheets', 'success');
-        }
-        
-        function initializeSheet() {
-            // The client is already initialized, so we can directly check/create headers
-            createSheetHeaders();
-        }
-        
-        function createSheetHeaders() {
-            const headers = [['Date', 'Description', 'Amount', 'Payment Method', 'Category', 'Notes']];
             
-            gapi.client.sheets.spreadsheets.values.get({
-                spreadsheetId: spreadsheetId,
-                range: 'A1:F1'
-            }).then(response => {
-                const values = response.result.values;
-                if (!values || values.length === 0) {
-                    // Sheet is empty, add headers
-                    gapi.client.sheets.spreadsheets.values.update({
-                        spreadsheetId: spreadsheetId,
-                        range: 'A1:F1',
-                        valueInputOption: 'RAW',
-                        values: headers
-                    }).then(() => {
-                        console.log('Headers created');
-                    });
-                }
-            });
+            // Update sync status
+            updateSyncStatus();
+            
+            // Initialize the app
+            init();
         }
         
-        function showSyncStatus(message, type = 'success') {
+        function updateSyncStatus() {
             const statusDiv = document.getElementById('syncStatus');
             const iconSpan = document.getElementById('syncIcon');
             const messageSpan = document.getElementById('syncMessage');
             
-            statusDiv.className = `sync-status ${type}`;
-            
-            switch(type) {
-                case 'success':
-                    iconSpan.textContent = '✓';
-                    break;
-                case 'error':
-                    iconSpan.textContent = '⚠';
-                    break;
-                case 'pending':
-                    iconSpan.textContent = '⏳';
-                    break;
-            }
-            
-            messageSpan.textContent = message;
             statusDiv.style.display = 'flex';
             
-            if (type === 'success') {
-                setTimeout(() => {
-                    statusDiv.style.display = 'none';
-                }, 3000);
+            if (syncMethod === 'local') {
+                statusDiv.className = 'sync-status info';
+                iconSpan.textContent = 'ℹ';
+                messageSpan.textContent = 'Local storage mode - use Export to backup your data';
+            } else {
+                statusDiv.className = 'sync-status';
+                iconSpan.textContent = '☁';
+                messageSpan.textContent = 'Auto-syncing to Google Sheets';
             }
         }
         
@@ -663,7 +633,7 @@
                 paymentMethod,
                 category,
                 notes,
-                synced: false
+                synced: syncMethod === 'local' // Local mode is always "synced"
             };
             
             expenses.unshift(expense);
@@ -676,44 +646,42 @@
             renderExpenses();
             updateSummary();
             
-            // Sync to Google Sheets
-            if (isSignedIn) {
+            // Sync to Google Sheets if enabled
+            if (syncMethod === 'sheets' && webhookUrl) {
                 await syncToGoogleSheets(expense);
             }
         }
         
         async function syncToGoogleSheets(expense) {
-            showSyncStatus('Syncing to Google Sheets...', 'pending');
-            
             try {
-                const values = [[
-                    expense.date,
-                    expense.description,
-                    expense.amount,
-                    expense.paymentMethod,
-                    expense.category || '',
-                    expense.notes || ''
-                ]];
-                
-                const response = await gapi.client.sheets.spreadsheets.values.append({
-                    spreadsheetId: spreadsheetId,
-                    range: 'A:F',
-                    valueInputOption: 'RAW',
-                    values: values
+                const response = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        date: expense.date,
+                        description: expense.description,
+                        amount: expense.amount,
+                        paymentMethod: expense.paymentMethod,
+                        category: expense.category,
+                        notes: expense.notes
+                    })
                 });
                 
-                // Mark as synced
-                const expenseIndex = expenses.findIndex(e => e.id === expense.id);
-                if (expenseIndex !== -1) {
-                    expenses[expenseIndex].synced = true;
-                    saveExpenses();
-                    renderExpenses();
+                if (response.ok) {
+                    // Mark as synced
+                    const expenseIndex = expenses.findIndex(e => e.id === expense.id);
+                    if (expenseIndex !== -1) {
+                        expenses[expenseIndex].synced = true;
+                        saveExpenses();
+                        renderExpenses();
+                    }
+                } else {
+                    console.error('Sync failed:', response.statusText);
                 }
-                
-                showSyncStatus('Synced to Google Sheets', 'success');
             } catch (error) {
-                console.error('Sync failed:', error);
-                showSyncStatus('Sync failed. Will retry later.', 'error');
+                console.error('Sync error:', error);
             }
         }
         
@@ -778,7 +746,9 @@
             container.innerHTML = expenses.map(expense => {
                 const date = new Date(expense.date).toLocaleDateString();
                 const category = expense.category ? `${expense.category} • ` : '';
-                const syncClass = expense.synced ? 'synced' : '';
+                const syncClass = (!expense.synced && syncMethod === 'sheets') ? 'pending-sync' : '';
+                const syncStatus = syncMethod === 'sheets' ? 
+                    (expense.synced ? '<span style="color: #4caf50;">✓ Synced</span>' : '<span style="color: #ff9800;">⏳ Pending</span>') : '';
                 
                 return `
                     <div class="expense-item ${syncClass}">
@@ -788,7 +758,7 @@
                                 <span>${date}</span>
                                 <span>${category}${expense.paymentMethod}</span>
                                 ${expense.notes ? `<span>${expense.notes}</span>` : ''}
-                                ${expense.synced ? '<span style="color: #4caf50;">✓ Synced</span>' : '<span style="color: #ff9800;">⏳ Pending sync</span>'}
+                                ${syncStatus}
                             </div>
                         </div>
                         <div style="display: flex; align-items: center;">
@@ -855,17 +825,6 @@
             }
         }
         
-        function disconnectGoogle() {
-            if (confirm('Are you sure you want to disconnect from Google?')) {
-                if (window.gapi && window.gapi.auth2) {
-                    window.gapi.auth2.getAuthInstance().signOut();
-                }
-                localStorage.removeItem('googleClientId');
-                localStorage.removeItem('googleSpreadsheetId');
-                location.reload();
-            }
-        }
-        
         // Handle Enter key for quick entry
         document.addEventListener('keypress', function(e) {
             if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
@@ -882,98 +841,30 @@
             updatePaymentMethodsList();
             renderExpenses();
             updateSummary();
-            
-            // Update button text to show API is loaded
-            if (gapiLoaded) {
-                document.getElementById('connectText').textContent = 'Connect to Google Sheets';
-                document.getElementById('connectBtn').disabled = false;
-            }
-            
-            // Check if already configured but DON'T auto-initialize
-            const clientId = localStorage.getItem('googleClientId');
-            const savedSpreadsheetId = localStorage.getItem('googleSpreadsheetId');
-            
-            if (clientId && savedSpreadsheetId) {
-                document.getElementById('clientId').value = clientId;
-                document.getElementById('spreadsheetId').value = savedSpreadsheetId;
-                // Just populate the fields, don't auto-connect
-            }
         }
         
-        // Wait for GAPI to load, then initialize
-        function waitForGapi() {
-            if (window.gapi && window.gapi.load) {
-                console.log('Google API loaded successfully');
-                gapiLoaded = true;
-                // Load auth2 and client immediately when API is ready
-                window.gapi.load('auth2:client', () => {
-                    console.log('Auth2 and Client APIs pre-loaded');
-                    init();
-                });
-            } else {
-                console.log('Waiting for Google API to load... gapi exists:', !!window.gapi);
-                setTimeout(waitForGapi, 500);
-            }
-        }
-        
-        // Load Google API with better error handling
-        function loadGoogleAPI() {
-            // Disable button initially
-            const connectBtn = document.getElementById('connectBtn');
-            const connectText = document.getElementById('connectText');
-            if (connectBtn && connectText) {
-                connectBtn.disabled = true;
-                connectText.textContent = 'Loading Google API...';
-            }
+        // Check if already configured
+        window.onload = function() {
+            const savedMethod = localStorage.getItem('syncMethod');
+            const savedWebhook = localStorage.getItem('webhookUrl');
             
-            // Try multiple CDN sources for better reliability
-            const apiSources = [
-                'https://apis.google.com/js/api.js',
-                'https://apis.google.com/js/api.js?onload=gapiLoaded'
-            ];
-            
-            function tryLoadAPI(sourceIndex = 0) {
-                if (sourceIndex >= apiSources.length) {
-                    console.error('All API sources failed');
-                    if (connectBtn && connectText) {
-                        connectText.textContent = 'Failed to load Google API';
-                        connectBtn.disabled = true;
-                    }
-                    alert('Failed to load Google API from all sources. Please check your internet connection and try again later.');
-                    return;
+            if (savedMethod) {
+                syncMethod = savedMethod;
+                if (savedMethod === 'sheets' && savedWebhook) {
+                    webhookUrl = savedWebhook;
+                    document.getElementById('webhookUrl').value = webhookUrl;
                 }
                 
-                const script = document.createElement('script');
-                script.src = apiSources[sourceIndex];
-                script.onload = function() {
-                    console.log(`Google API script loaded from source ${sourceIndex + 1}`);
-                    // Give it more time to initialize
-                    setTimeout(() => {
-                        if (window.gapi) {
-                            console.log('Google API initialized successfully');
-                            waitForGapi();
-                        } else {
-                            console.log('API script loaded but gapi not available, trying next source...');
-                            tryLoadAPI(sourceIndex + 1);
-                        }
-                    }, 1000);
-                };
-                script.onerror = function() {
-                    console.error(`Failed to load Google API from source ${sourceIndex + 1}`);
-                    tryLoadAPI(sourceIndex + 1);
-                };
-                document.head.appendChild(script);
+                // Skip setup and go straight to main content
+                document.querySelector('.setup-section').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'block';
+                updateSyncStatus();
+                init();
+            } else {
+                // Show setup with local selected by default
+                selectMethod('local');
             }
-            
-            tryLoadAPI();
-        }
-        
-        // Start loading when page loads
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', loadGoogleAPI);
-        } else {
-            loadGoogleAPI();
-        }
+        };
     </script>
 </body>
 </html>
