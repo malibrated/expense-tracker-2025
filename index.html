@@ -546,6 +546,7 @@ function doGet(e) {
             
             <div class="export-section">
                 <button class="btn export-btn" onclick="exportToCSV()">📊 Export to CSV</button>
+                <button class="btn secondary" onclick="retryPendingSync()" id="retryBtn" style="display: none;">🔄 Retry Sync</button>
                 <button class="btn clear-btn" onclick="clearAllExpenses()">🗑️ Clear All Data</button>
             </div>
         </div>
@@ -749,6 +750,7 @@ function doGet(e) {
                         <p>No expenses recorded yet.<br>Add your first expense above!</p>
                     </div>
                 `;
+                checkForPendingSync();
                 return;
             }
             
@@ -771,12 +773,14 @@ function doGet(e) {
                             </div>
                         </div>
                         <div style="display: flex; align-items: center;">
-                            <div class="expense-amount">$${expense.amount.toFixed(2)}</div>
+                            <div class="expense-amount">${expense.amount.toFixed(2)}</div>
                             <button class="delete-btn" onclick="deleteExpense(${expense.id})">×</button>
                         </div>
                     </div>
                 `;
             }).join('');
+            
+            checkForPendingSync();
         }
         
         function updateSummary() {
@@ -831,6 +835,7 @@ function doGet(e) {
                 saveExpenses();
                 renderExpenses();
                 updateSummary();
+                checkForPendingSync();
             }
         }
         
