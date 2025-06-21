@@ -704,6 +704,40 @@ function doGet(e) {
             }
         }
         
+        async function retryPendingSync() {
+            const pendingExpenses = expenses.filter(e => !e.synced && syncMethod === 'sheets');
+            
+            if (pendingExpenses.length === 0) {
+                alert('No pending expenses to sync');
+                return;
+            }
+            
+            const retryBtn = document.getElementById('retryBtn');
+            retryBtn.textContent = 'Syncing...';
+            retryBtn.disabled = true;
+            
+            for (const expense of pendingExpenses) {
+                await syncToGoogleSheets(expense);
+                // Small delay between requests
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            retryBtn.textContent = '🔄 Retry Sync';
+            retryBtn.disabled = false;
+            checkForPendingSync();
+        }
+        
+        function checkForPendingSync() {
+            const retryBtn = document.getElementById('retryBtn');
+            const hasPending = expenses.some(e => !e.synced && syncMethod === 'sheets');
+            
+            if (hasPending && syncMethod === 'sheets') {
+                retryBtn.style.display = 'block';
+            } else {
+                retryBtn.style.display = 'none';
+            }
+        }
+        
         function clearForm() {
             // Set date to today
             document.getElementById('expenseDate').value = new Date().toISOString().split('T')[0];
