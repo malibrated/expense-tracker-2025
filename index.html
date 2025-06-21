@@ -868,14 +868,14 @@
                 document.getElementById('connectBtn').disabled = false;
             }
             
-            // Check if already configured
+            // Check if already configured but DON'T auto-initialize
             const clientId = localStorage.getItem('googleClientId');
-            const spreadsheetId = localStorage.getItem('googleSpreadsheetId');
+            const savedSpreadsheetId = localStorage.getItem('googleSpreadsheetId');
             
-            if (clientId && spreadsheetId && gapiLoaded) {
+            if (clientId && savedSpreadsheetId) {
                 document.getElementById('clientId').value = clientId;
-                document.getElementById('spreadsheetId').value = spreadsheetId;
-                // Don't auto-initialize on page load, let user click connect
+                document.getElementById('spreadsheetId').value = savedSpreadsheetId;
+                // Just populate the fields, don't auto-connect
             }
         }
         
