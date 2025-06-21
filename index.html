@@ -510,61 +510,22 @@
             localStorage.setItem('googleClientId', clientId);
             localStorage.setItem('googleSpreadsheetId', spreadsheetId);
             
-            // Debug logging with correct references
-            console.log('Checking API availability...');
-            console.log('window.gapi exists:', !!window.gapi);
-            console.log('window.gapi.load exists:', !!(window.gapi && window.gapi.load));
-            
-            // Try to force reload the API if it's not available
-            if (!window.gapi) {
-                console.log('Google API not found, attempting to reload...');
-                alert('Google API failed to load. Please refresh the page and try again.');
+            // Check if APIs are pre-loaded
+            if (!window.gapi || !window.gapi.client || !window.gapi.auth2) {
+                alert('Google APIs not fully loaded. Please refresh the page and try again.');
                 return;
             }
             
-            // Wait for API to be truly ready
-            function waitForGapiReady(attempts = 0) {
-                if (window.gapi && window.gapi.load && typeof window.gapi.load === 'function') {
-                    console.log('API is ready, proceeding...');
-                    proceedWithAuth();
-                } else if (attempts < 50) { // Try for 10 seconds
-                    console.log(`API not ready yet, waiting... (attempt ${attempts + 1})`);
-                    setTimeout(() => waitForGapiReady(attempts + 1), 200);
-                } else {
-                    console.error('API failed to become ready after 10 seconds');
-                    alert('Google API failed to initialize. Please refresh the page and try again.');
-                    resetConnectButton();
-                }
-            }
+            console.log('APIs are ready, initializing...');
             
-            waitForGapiReady();
-        }
-        
-        function proceedWithAuth() {
             // Update button to show loading
             const connectBtn = document.getElementById('connectBtn');
             const connectText = document.getElementById('connectText');
             connectBtn.disabled = true;
             connectText.textContent = 'Connecting...';
             
-            // Double-check gapi is available
-            console.log('Double-checking gapi availability...');
-            console.log('window.gapi:', !!window.gapi);
-            console.log('window.gapi.load:', !!(window.gapi && window.gapi.load));
-            
-            if (!window.gapi || !window.gapi.load) {
-                console.error('gapi not available when trying to proceed');
-                alert('Google API not ready. Please refresh and try again.');
-                resetConnectButton();
-                return;
-            }
-            
-            // Load the required APIs with timeout
-            console.log('Loading auth2 and client...');
-            window.gapi.load('auth2:client', () => {
-                console.log('Auth2 and client loaded successfully');
-                initGoogleAPI();
-            });
+            // Initialize directly since APIs are pre-loaded
+            initGoogleAPI();
         }
         
         function initGoogleAPI() {
@@ -944,7 +905,11 @@
             if (window.gapi && window.gapi.load) {
                 console.log('Google API loaded successfully');
                 gapiLoaded = true;
-                init();
+                // Load auth2 and client immediately when API is ready
+                window.gapi.load('auth2:client', () => {
+                    console.log('Auth2 and Client APIs pre-loaded');
+                    init();
+                });
             } else {
                 console.log('Waiting for Google API to load... gapi exists:', !!window.gapi);
                 setTimeout(waitForGapi, 500);
