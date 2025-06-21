@@ -510,15 +510,32 @@
             localStorage.setItem('googleClientId', clientId);
             localStorage.setItem('googleSpreadsheetId', spreadsheetId);
             
+            // Debug logging
+            console.log('Checking API availability...');
+            console.log('gapi available:', typeof gapi !== 'undefined');
+            console.log('gapi.load available:', typeof gapi !== 'undefined' && typeof gapi.load === 'function');
+            
             // Check if gapi is loaded
             if (typeof gapi === 'undefined') {
                 alert('Google API is still loading. Please wait a moment and try again.');
                 return;
             }
             
-            // Load the required APIs
+            if (typeof gapi.load !== 'function') {
+                alert('Google API not fully loaded. Please refresh the page and try again.');
+                return;
+            }
+            
+            // Update button to show loading
+            const connectBtn = document.getElementById('connectBtn');
+            const connectText = document.getElementById('connectText');
+            connectBtn.disabled = true;
+            connectText.textContent = 'Connecting...';
+            
+            // Load the required APIs with timeout
+            console.log('Loading auth2 and client...');
             gapi.load('auth2:client', () => {
-                console.log('Auth2 and client loaded');
+                console.log('Auth2 and client loaded successfully');
                 initGoogleAPI();
             });
         }
@@ -526,32 +543,48 @@
         function initGoogleAPI() {
             const clientId = localStorage.getItem('googleClientId');
             
+            console.log('Initializing Google API with client ID:', clientId);
+            
             gapi.client.init({
-                'apiKey': '', // We don't need an API key for OAuth-only access
                 'clientId': clientId,
                 'discoveryDocs': ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
                 'scope': 'https://www.googleapis.com/auth/spreadsheets'
             }).then(() => {
+                console.log('Google API initialized successfully');
                 const authInstance = gapi.auth2.getAuthInstance();
                 isSignedIn = authInstance.isSignedIn.get();
                 
+                console.log('Current sign-in status:', isSignedIn);
+                
                 if (isSignedIn) {
+                    console.log('User already signed in');
                     showMainContent();
                     initializeSheet();
                 } else {
+                    console.log('Starting sign-in process...');
                     authInstance.signIn().then(() => {
+                        console.log('Sign-in successful');
                         isSignedIn = true;
                         showMainContent();
                         initializeSheet();
                     }).catch(error => {
                         console.error('Sign-in failed:', error);
                         showSyncStatus('Sign-in failed. Please try again.', 'error');
+                        resetConnectButton();
                     });
                 }
             }).catch(error => {
                 console.error('Failed to initialize Google API:', error);
                 alert('Failed to initialize Google API. Please check your Client ID and try again.');
+                resetConnectButton();
             });
+        }
+        
+        function resetConnectButton() {
+            const connectBtn = document.getElementById('connectBtn');
+            const connectText = document.getElementById('connectText');
+            connectBtn.disabled = false;
+            connectText.textContent = 'Connect to Google Sheets';
         }
         
         function showMainContent() {
