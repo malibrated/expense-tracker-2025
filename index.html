@@ -431,20 +431,30 @@
                     <li>Set "Execute as: Me" and "Who has access: Anyone"</li>
                     <li>Copy the web app URL and paste it below</li>
                 </ol>
-                <textarea readonly id="appsScript" style="width: 100%; height: 150px; margin: 10px 0; font-family: monospace; font-size: 12px;">function doPost(e) {
+                <textarea readonly id="appsScript" style="width: 100%; height: 200px; margin: 10px 0; font-family: monospace; font-size: 12px;">function doPost(e) {
   const sheet = SpreadsheetApp.getActiveSheet();
-  const data = JSON.parse(e.postData.contents);
+  
+  // Handle form data (avoids CORS issues)
+  const params = e.parameter;
   
   sheet.appendRow([
-    data.date,
-    data.description,
-    data.amount,
-    data.paymentMethod,
-    data.category || '',
-    data.notes || ''
+    params.date,
+    params.description,
+    parseFloat(params.amount),
+    params.paymentMethod,
+    params.category || '',
+    params.notes || ''
   ]);
   
-  return ContentService.createTextOutput('Success');
+  return ContentService
+    .createTextOutput('Success')
+    .setMimeType(ContentService.MimeType.TEXT);
+}
+
+function doGet(e) {
+  return ContentService
+    .createTextOutput('OK')
+    .setMimeType(ContentService.MimeType.TEXT);
 }</textarea>
                 
                 <div class="input-group">
@@ -654,19 +664,18 @@
         
         async function syncToGoogleSheets(expense) {
             try {
+                // Use a simpler approach to avoid CORS preflight
+                const formData = new FormData();
+                formData.append('date', expense.date);
+                formData.append('description', expense.description);
+                formData.append('amount', expense.amount);
+                formData.append('paymentMethod', expense.paymentMethod);
+                formData.append('category', expense.category || '');
+                formData.append('notes', expense.notes || '');
+                
                 const response = await fetch(webhookUrl, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        date: expense.date,
-                        description: expense.description,
-                        amount: expense.amount,
-                        paymentMethod: expense.paymentMethod,
-                        category: expense.category,
-                        notes: expense.notes
-                    })
+                    body: formData
                 });
                 
                 if (response.ok) {
