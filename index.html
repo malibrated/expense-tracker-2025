@@ -516,15 +516,21 @@
                 return;
             }
             
-            gapi.load('auth2:client', initGoogleAPI);
+            // Load the required APIs
+            gapi.load('auth2:client', () => {
+                console.log('Auth2 and client loaded');
+                initGoogleAPI();
+            });
         }
         
         function initGoogleAPI() {
             const clientId = localStorage.getItem('googleClientId');
             
-            gapi.auth2.init({
-                client_id: clientId,
-                scope: 'https://www.googleapis.com/auth/spreadsheets'
+            gapi.client.init({
+                'apiKey': '', // We don't need an API key for OAuth-only access
+                'clientId': clientId,
+                'discoveryDocs': ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
+                'scope': 'https://www.googleapis.com/auth/spreadsheets'
             }).then(() => {
                 const authInstance = gapi.auth2.getAuthInstance();
                 isSignedIn = authInstance.isSignedIn.get();
@@ -542,6 +548,9 @@
                         showSyncStatus('Sign-in failed. Please try again.', 'error');
                     });
                 }
+            }).catch(error => {
+                console.error('Failed to initialize Google API:', error);
+                alert('Failed to initialize Google API. Please check your Client ID and try again.');
             });
         }
         
@@ -552,9 +561,8 @@
         }
         
         function initializeSheet() {
-            gapi.client.load('sheets', 'v4').then(() => {
-                createSheetHeaders();
-            });
+            // The client is already initialized, so we can directly check/create headers
+            createSheetHeaders();
         }
         
         function createSheetHeaders() {
@@ -867,7 +875,7 @@
             if (clientId && spreadsheetId && gapiLoaded) {
                 document.getElementById('clientId').value = clientId;
                 document.getElementById('spreadsheetId').value = spreadsheetId;
-                initGoogleAPI();
+                // Don't auto-initialize on page load, let user click connect
             }
         }
         
